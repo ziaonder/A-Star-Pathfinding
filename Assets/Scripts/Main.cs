@@ -1,13 +1,21 @@
-using System.Collections.Generic;   
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
+using System;
+
+public enum Type
+{
+    START,
+    GOAL,
+    PATH
+}
 
 public class Node
 {
     public int x, y;
     public int gCost, hCost;
     public Node parent;
+    public Type type;
     public int FCost => gCost + hCost;
 
     public Node()
@@ -35,11 +43,11 @@ public class Node
 
 public class Main : MonoBehaviour
 {
-    private int[,] matrix;
+    public static int[,] matrix;
     private List<Node> openList, closedList;
-    private int goalX = 9, goalY = 9, width = 6, height = 4;
-    public TextMeshProUGUI tmPro;
-    public Slider widthSlider, heightSlider;
+    public static int goalX = 9, goalY = 9, width = 10, height = 10;
+    private Vector2 canvasPos;
+    public static event Action OnCalculation;
 
     private void Awake()
     {
@@ -51,7 +59,6 @@ public class Main : MonoBehaviour
     {
         openList.Clear();
         closedList.Clear();
-        tmPro.text = "";
         InitializeMatrix(width, height);
         FindPath();
     }
@@ -67,7 +74,7 @@ public class Main : MonoBehaviour
         startingNode.parent = null;
         openList.Add(startingNode);
         currentNode = startingNode;
-        while ((currentNode.x != goalX && currentNode.y != goalY) || openList.Count != 0)
+        while (openList.Count > 0)
         {
             // Select the node with the lowest F cost.
             foreach (Node node in openList)
@@ -87,21 +94,34 @@ public class Main : MonoBehaviour
             if (currentNode.x == goalX && currentNode.y == goalY)
             {
                 Debug.Log("Goal Found!");
-                int[,] printMatrix = new int[width, height];
                 while(currentNode != null)
                 {
-                    printMatrix[currentNode.y, currentNode.x] = 1;
+                    matrix[currentNode.y, currentNode.x] = 1;
+
+                    if ((currentNode.x != goalX && currentNode.y != goalY) || 
+                        (currentNode.x != 0 && currentNode.y != 0))
+                    {
+                        currentNode.type = Type.PATH;
+                    }
+
                     currentNode = currentNode.parent;
                 }
 
-                for(int i = 0; i < width; i++)
+                string stringMatrix = "";
+
+                for(int i = 0; i < matrix.GetLength(0); i++)
                 {
-                    for (int j = 0; j < height; j++)
+                    for(int j = 0; j < matrix.GetLength(1); j++)
                     {
-                        tmPro.text += printMatrix[i, j] + " ";
+                        stringMatrix += $"{matrix[i, j]}  ";
                     }
-                    tmPro.text += "\n";
+
+                    stringMatrix += "\n";
                 }
+
+                Debug.Log(stringMatrix);
+
+                OnCalculation?.Invoke();
                 break;
             }
 
@@ -138,12 +158,6 @@ public class Main : MonoBehaviour
     private void InitializeMatrix(int rows, int cols)
     {
         matrix = new int[rows, cols];
-    }
-
-    public void OnMatrixChanged()
-    {
-        width = (int)widthSlider.value;
-        height = (int)heightSlider.value;
     }
 
     private List<Node> GetNeighbors(Node node)
