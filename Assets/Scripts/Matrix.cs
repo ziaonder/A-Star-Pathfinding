@@ -8,7 +8,7 @@ public class Matrix : MonoBehaviour
     private Sprite sprite;
     private Texture2D texture;
     private SpriteRenderer spriteRenderer;
-    private Color red, green, white;
+    private Color red, green, white, gray = Color.gray;
     private int leftBorder = 0, rightBorder = 4, topBorder = 0, bottomBorder = -4;
     private Vector2Int currentStart, currentGoal;
     public static event Action<Vector2, Vector2> OnMouseButtonDown;
@@ -56,6 +56,11 @@ public class Matrix : MonoBehaviour
             isHoldingMouse = true;
         }
 
+        if(Input.GetMouseButtonDown(0) && !CheckIfHoldingAnyNode())
+        {
+            HandleObstacle();
+        }
+
         if (Input.GetMouseButtonUp(0))
         {
             isHoldingMouse = false;
@@ -69,14 +74,14 @@ public class Matrix : MonoBehaviour
 
     private bool CheckIfHoldingAnyNode()
     {
-        Vector2 pos = GetMousePosInMatrix();
+        Vector2 index = TurnMousePosIntoMatrixIndex();
 
-        if (pos == currentStart)
+        if (index == currentStart)
         {
             heldColor = green;
             return true;
         }
-        else if(pos == currentGoal)
+        else if(index == currentGoal)
         {
             heldColor = red;
             return true;
@@ -85,7 +90,7 @@ public class Matrix : MonoBehaviour
             return false;
     }
 
-    private Vector2 GetMousePosInMatrix()
+    private Vector2 TurnMousePosIntoMatrixIndex()
     {
         Vector3 mousePos = Input.mousePosition;
         mousePos.z = 10;
@@ -106,13 +111,40 @@ public class Matrix : MonoBehaviour
 
     private void HandleMouseClick()
     {
-        heldNode = GetMousePosInMatrix();
+        heldNode = TurnMousePosIntoMatrixIndex();
         // Outside of boundaries
         if(heldNode == -Vector2.one)
             return;
 
+        if (Main.matrix[(int)heldNode.y, (int)heldNode.x] == -1)
+            return;
+
         DrawNode((int)heldNode.x, (int)heldNode.y, heldColor);
         OnMouseButtonDown?.Invoke(currentStart, currentGoal);
+    }
+
+    private void HandleObstacle()
+    {
+        Vector2 index = TurnMousePosIntoMatrixIndex();
+
+        // Outside of boundaries
+        if (index.x < 0 || index.x > Main.width || index.y > Main.height|| index.y < 0)
+            return;
+
+        // -1 represents blocked node, 0 represents passable node
+        switch (Main.matrix[(int)index.y, (int)index.x])
+        {
+            case -1:
+                Main.matrix[(int)index.y, (int)index.x] = 0;
+                DrawNode((int)index.x, (int)index.y, Color.black);
+                break;
+            case 0:
+                Main.matrix[(int)index.y, (int)index.x] = -1;
+                DrawNode((int)index.x, (int)index.y, gray);
+                break;
+            default:
+                return;
+        }
     }
 
     private void DrawBlank()
@@ -136,10 +168,22 @@ public class Matrix : MonoBehaviour
         {
             for (int j = 0; j < 10 * boxSize; j++)
             {
-                if (Main.matrix[9 - i / boxSize, j / boxSize] == 1)
+                switch (Main.matrix[9 - i / boxSize, j / boxSize])
                 {
-                    texture.SetPixel(j, i, white);
+                    case 1:
+                        texture.SetPixel(j, i, white);
+                        break;
+                    case -1:
+                        texture.SetPixel(j, i, gray);
+                        break;
+                    default:
+                        continue;
                 }
+
+                //if (Main.matrix[9 - i / boxSize, j / boxSize] == 1)
+                //{
+                //    texture.SetPixel(j, i, white);
+                //}
             }
         }
 
@@ -155,8 +199,10 @@ public class Matrix : MonoBehaviour
         Vector2Int point;
         if (color == red)
             point = currentGoal;
-        else
+        else if(color == green)
             point = currentStart;
+        else
+            point = new Vector2Int(x, y);
 
         // Draw the previous node to black
         for (int i = point.y * boxSize; i < point.y * boxSize + boxSize; i++)
@@ -169,7 +215,7 @@ public class Matrix : MonoBehaviour
 
         if (point == currentStart)
             currentStart = new Vector2Int(x, y);
-        else
+        else if(point == currentGoal)
             currentGoal = new Vector2Int(x, y);
 
         for (int i = y * boxSize; i < y * boxSize + boxSize; i++)

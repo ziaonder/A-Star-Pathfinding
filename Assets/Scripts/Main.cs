@@ -1,3 +1,6 @@
+// Code by: ziaonder
+// Matrix indexes has 3 values. 1 => path, 0 => empty, -1 => obstacle.
+
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -44,7 +47,8 @@ public class Main : MonoBehaviour
 {
     public static int[,] matrix;
     private List<Node> openList, closedList;
-    private int startX = 0, startY = 0, goalX = 9, goalY = 9, width = 10, height = 10;
+    public static int width = 10, height = 10;
+    private int startX = 0, startY = 0, goalX = 9, goalY = 9;
     private Vector2 canvasPos;
     public static event Action OnCalculation;
 
@@ -52,6 +56,7 @@ public class Main : MonoBehaviour
     {
         openList = new List<Node>();
         closedList = new List<Node>();
+        InitializeMatrix(height, width);
     }
 
     private void OnEnable()
@@ -68,8 +73,8 @@ public class Main : MonoBehaviour
     {
         openList.Clear();
         closedList.Clear();
-        InitializeMatrix(width, height);
         FindPath();
+        InitializeMatrix(height, width);
     }
 
     private void AssignNodeValue(Vector2 currentStart, Vector2 currentGoal)
@@ -91,7 +96,7 @@ public class Main : MonoBehaviour
         startingNode.parent = null;
         openList.Add(startingNode);
         currentNode = startingNode;
-        while (openList.Count > 0)
+        while (openList.Count > 0 || (currentNode.x != goalX && currentNode.y != goalY))
         {
             // Select the node with the lowest F cost.
             foreach (Node node in openList)
@@ -117,24 +122,13 @@ public class Main : MonoBehaviour
                     currentNode = currentNode.parent;
                 }
 
-                string stringMatrix = "";
-
-                for(int i = 0; i < matrix.GetLength(0); i++)
-                {
-                    for(int j = 0; j < matrix.GetLength(1); j++)
-                    {
-                        stringMatrix += $"{matrix[i, j]}  ";
-                    }
-
-                    stringMatrix += "\n";
-                }
-
                 OnCalculation?.Invoke();
                 break;
             }
 
             // Get the neighbors of the current node.
             List<Node> neighbors = GetNeighbors(currentNode);
+
             foreach (Node neighbor in neighbors)
             {
                 if (closedList.Contains(neighbor))
@@ -165,7 +159,21 @@ public class Main : MonoBehaviour
 
     private void InitializeMatrix(int rows, int cols)
     {
-        matrix = new int[rows, cols];
+        if (matrix == null)
+            matrix = new int[rows, cols];
+        else
+        {
+            for (int i = 0; i < matrix.GetLength(0); i++)
+            {
+                for (int j = 0; j < matrix.GetLength(1); j++)
+                {
+                    if (matrix[i, j] == -1)
+                        continue;
+
+                    matrix[i, j] = 0;
+                }
+            }
+        }
     }
 
     private List<Node> GetNeighbors(Node node)
@@ -178,6 +186,12 @@ public class Main : MonoBehaviour
             int y = node.y + movements[i, 1];
             if (x >= 0 && x < matrix.GetLength(1) && y >= 0 && y < matrix.GetLength(0))
             {
+                // -1 means obstacle.
+                if (matrix[y, x] == -1)
+                {
+                    continue;
+                }
+
                 Node neighbor = new Node();
                 neighbor.x = x;
                 neighbor.y = y;
