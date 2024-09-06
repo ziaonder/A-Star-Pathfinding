@@ -13,6 +13,8 @@ public class Matrix : MonoBehaviour
     private Vector2Int currentStart, currentGoal;
     public static event Action<Vector2, Vector2> OnMouseButtonDown;
     private bool isHoldingMouse = false;
+    private Color heldColor;
+    private Vector2 heldNode;
 
     private void Awake()
     {
@@ -49,12 +51,7 @@ public class Matrix : MonoBehaviour
 
     private void Update()
     {
-        //if (Input.GetMouseButtonDown(0))
-        //{
-        //    HandleMouseClick(green);
-        //}
-
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButton(0) && CheckIfHoldingAnyNode())
         {
             isHoldingMouse = true;
         }
@@ -64,18 +61,31 @@ public class Matrix : MonoBehaviour
             isHoldingMouse = false;
         }
 
-        //if (Input.GetMouseButtonDown(1))
-        //{
-        //    HandleMouseClick(red);
-        //}
-
         if (isHoldingMouse)
         {
             HandleMouseClick();
         }
     }
 
-    private void HandleMouseClick()
+    private bool CheckIfHoldingAnyNode()
+    {
+        Vector2 pos = GetMousePosInMatrix();
+
+        if (pos == currentStart)
+        {
+            heldColor = green;
+            return true;
+        }
+        else if(pos == currentGoal)
+        {
+            heldColor = red;
+            return true;
+        }
+        else
+            return false;
+    }
+
+    private Vector2 GetMousePosInMatrix()
     {
         Vector3 mousePos = Input.mousePosition;
         mousePos.z = 10;
@@ -84,23 +94,24 @@ public class Matrix : MonoBehaviour
         if (mousePos.x > leftBorder && mousePos.x < rightBorder &&
             mousePos.y < topBorder && mousePos.y > bottomBorder)
         {
-            Vector2Int node = new Vector2Int((int)mousePos.x , (int)mousePos.y) * 100;
-            node.x = Mathf.Abs(node.x);
-            node.y = Mathf.Abs(node.y);
-            node = node / boxSize;
+            mousePos = mousePos * 100;
+            mousePos = mousePos / boxSize;
+            mousePos = new Vector2(Mathf.Floor(Mathf.Abs(mousePos.x)), Mathf.Floor(Mathf.Abs(mousePos.y)));
 
-            if(node.x == currentStart.x && node.y == currentStart.y)
-            {
-                Debug.Log("yooo");
-            }
-            else if (node.x == currentGoal.x && node.y == currentGoal.y)
-            {
-                Debug.Log("ayayayya");
-            }
-
-            //DrawNode((int)node.x / boxSize, Mathf.Abs((int)node.y) / boxSize, color);
+            return mousePos;
         }
 
+        return -Vector2.one;
+    }
+
+    private void HandleMouseClick()
+    {
+        heldNode = GetMousePosInMatrix();
+        // Outside of boundaries
+        if(heldNode == -Vector2.one)
+            return;
+
+        DrawNode((int)heldNode.x, (int)heldNode.y, heldColor);
         OnMouseButtonDown?.Invoke(currentStart, currentGoal);
     }
 
@@ -148,9 +159,9 @@ public class Matrix : MonoBehaviour
             point = currentStart;
 
         // Draw the previous node to black
-        for (int i = (int)point.y * boxSize; i < (int)point.y * boxSize + boxSize; i++)
+        for (int i = point.y * boxSize; i < point.y * boxSize + boxSize; i++)
         {
-            for (int j = (int)point.x * boxSize; j < (int)point.x * boxSize + boxSize; j++)
+            for (int j = point.x * boxSize; j < point.x * boxSize + boxSize; j++)
             {
                 texture.SetPixel(j, texture.height - 1 - i, Color.black);
             }
