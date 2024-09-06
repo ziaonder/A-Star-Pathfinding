@@ -8,7 +8,7 @@ public class Matrix : MonoBehaviour
     private Sprite sprite;
     private Texture2D texture;
     private SpriteRenderer spriteRenderer;
-    private Color red, green, white, gray = Color.gray;
+    private Color red, green, yellow, gray = Color.gray;
     private int leftBorder = 0, rightBorder = 4, topBorder = 0, bottomBorder = -4;
     private Vector2Int currentStart, currentGoal;
     public static event Action<Vector2, Vector2> OnMouseButtonDown;
@@ -37,8 +37,8 @@ public class Matrix : MonoBehaviour
         red.a = 0.5f;
         green = Color.green;
         green.a = 0.5f;
-        white = Color.white;
-        white.a = .5f;
+        yellow = Color.yellow;
+        yellow.a = .5f;
         texture = new Texture2D(boxSize * 10, boxSize * 10);
         texture.wrapMode = TextureWrapMode.Clamp;
         currentStart = new Vector2Int(int.MaxValue, int.MaxValue);
@@ -171,7 +171,7 @@ public class Matrix : MonoBehaviour
                 switch (Main.matrix[9 - i / boxSize, j / boxSize])
                 {
                     case 1:
-                        texture.SetPixel(j, i, white);
+                        texture.SetPixel(j, i, yellow);
                         break;
                     case -1:
                         texture.SetPixel(j, i, gray);
@@ -179,11 +179,6 @@ public class Matrix : MonoBehaviour
                     default:
                         continue;
                 }
-
-                //if (Main.matrix[9 - i / boxSize, j / boxSize] == 1)
-                //{
-                //    texture.SetPixel(j, i, white);
-                //}
             }
         }
 

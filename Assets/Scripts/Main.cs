@@ -2,7 +2,6 @@
 // Matrix indexes has 3 values. 1 => path, 0 => empty, -1 => obstacle.
 
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using System;
 
@@ -20,12 +19,15 @@ public class Node
     public Node parent;
     public int FCost => gCost + hCost;
 
-    public Node()
+    public Node(int x, int y)
     {
+        this.x = x;
+        this.y = y;
         gCost = int.MaxValue;
         hCost = 0;
         parent = null;
     }
+
 
     public override bool Equals(object obj)
     {
@@ -87,7 +89,7 @@ public class Main : MonoBehaviour
 
     private void FindPath()
     {
-        Node startingNode = new Node();
+        Node startingNode = new Node(startX, startY);
         Node currentNode = null;
         startingNode.x = startX;
         startingNode.y = startY;
@@ -95,14 +97,14 @@ public class Main : MonoBehaviour
         startingNode.hCost = CalculateManhattan(startingNode, goalX, goalY);
         startingNode.parent = null;
         openList.Add(startingNode);
-        currentNode = startingNode;
-        while (openList.Count > 0 || (currentNode.x != goalX && currentNode.y != goalY))
+        while (openList.Count > 0 && (currentNode == null || (currentNode.x != goalX || currentNode.y != goalY)))
         {
             // Select the node with the lowest F cost.
             foreach (Node node in openList)
             {
-                if (currentNode == null || node.FCost < currentNode.FCost
-                    || (node.FCost == currentNode.FCost && node.hCost < currentNode.hCost))
+                if (currentNode == null || 
+                    node.FCost < currentNode.FCost || 
+                    (node.FCost == currentNode.FCost && node.hCost < currentNode.hCost))
                 {
                     currentNode = node;
                 }
@@ -149,6 +151,7 @@ public class Main : MonoBehaviour
                     }
                 }
             }
+            currentNode = null;
         }
     }
 
@@ -192,9 +195,9 @@ public class Main : MonoBehaviour
                     continue;
                 }
 
-                Node neighbor = new Node();
-                neighbor.x = x;
-                neighbor.y = y;
+                Node neighbor = new Node(x, y);
+                //neighbor.x = x;
+                //neighbor.y = y;
                 neighbors.Add(neighbor);
             }
         }
