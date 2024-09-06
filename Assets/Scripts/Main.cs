@@ -15,7 +15,6 @@ public class Node
     public int x, y;
     public int gCost, hCost;
     public Node parent;
-    public Type type;
     public int FCost => gCost + hCost;
 
     public Node()
@@ -45,7 +44,7 @@ public class Main : MonoBehaviour
 {
     public static int[,] matrix;
     private List<Node> openList, closedList;
-    public static int goalX = 9, goalY = 9, width = 10, height = 10;
+    private int startX = 0, startY = 0, goalX = 9, goalY = 9, width = 10, height = 10;
     private Vector2 canvasPos;
     public static event Action OnCalculation;
 
@@ -53,6 +52,16 @@ public class Main : MonoBehaviour
     {
         openList = new List<Node>();
         closedList = new List<Node>();
+    }
+
+    private void OnEnable()
+    {
+        Matrix.OnMouseButtonDown += AssignNodeValue;
+    }
+
+    private void OnDisable()
+    {
+        Matrix.OnMouseButtonDown -= AssignNodeValue;
     }
 
     public void OnFind()
@@ -63,14 +72,22 @@ public class Main : MonoBehaviour
         FindPath();
     }
 
+    private void AssignNodeValue(Vector2 currentStart, Vector2 currentGoal)
+    {
+        startX = (int)currentStart.x;
+        startY = (int)currentStart.y;
+        goalX = (int)currentGoal.x;
+        goalY = (int)currentGoal.y;
+    }
+
     private void FindPath()
     {
         Node startingNode = new Node();
         Node currentNode = null;
+        startingNode.x = startX;
+        startingNode.y = startY;
         startingNode.gCost = 0;
         startingNode.hCost = CalculateManhattan(startingNode, goalX, goalY);
-        startingNode.x = 0;
-        startingNode.y = 0;
         startingNode.parent = null;
         openList.Add(startingNode);
         currentNode = startingNode;
@@ -97,13 +114,6 @@ public class Main : MonoBehaviour
                 while(currentNode != null)
                 {
                     matrix[currentNode.y, currentNode.x] = 1;
-
-                    if ((currentNode.x != goalX && currentNode.y != goalY) || 
-                        (currentNode.x != 0 && currentNode.y != 0))
-                    {
-                        currentNode.type = Type.PATH;
-                    }
-
                     currentNode = currentNode.parent;
                 }
 
@@ -118,8 +128,6 @@ public class Main : MonoBehaviour
 
                     stringMatrix += "\n";
                 }
-
-                Debug.Log(stringMatrix);
 
                 OnCalculation?.Invoke();
                 break;
