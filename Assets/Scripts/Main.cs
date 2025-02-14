@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.UI;
 
 public enum Type
 {
@@ -28,7 +29,6 @@ public class Node
         parent = null;
     }
 
-
     public override bool Equals(object obj)
     {
         if (obj is Node other)
@@ -49,10 +49,17 @@ public class Main : MonoBehaviour
 {
     public static int[,] matrix;
     private List<Node> openList, closedList;
-    public static int width = 10, height = 10;
-    private int startX = 0, startY = 0, goalX = 9, goalY = 9;
+    public static int width = 20, height = 12;
+    private int startX = 0, startY = 0, goalX = width - 1, goalY = height - 1;
     private Vector2 canvasPos;
-    public static event Action OnCalculation;
+    public static event Action OnCalculation, OnSettingsChanged;
+    public Slider sliderWidth, sliderHeight;
+    private bool isDiagonalAllowed = false;
+    private int[,] movementsAll = new int[8, 2] {
+            { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 },     // cardinal directions
+            { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1} };  // diagonal directions   
+    private int[,] movementsCardinal = new int[4, 2] {
+            { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };     // cardinal directions
 
     private void Awake()
     {
@@ -64,11 +71,13 @@ public class Main : MonoBehaviour
     private void OnEnable()
     {
         Matrix.OnMouseButtonDown += AssignNodeValue;
+        SliderController.OnUpdateData += SetWidthHeight;
     }
 
     private void OnDisable()
     {
         Matrix.OnMouseButtonDown -= AssignNodeValue;
+        SliderController.OnUpdateData -= SetWidthHeight;
     }
 
     public void OnFind()
@@ -182,8 +191,9 @@ public class Main : MonoBehaviour
     private List<Node> GetNeighbors(Node node)
     {
         List<Node> neighbors = new List<Node>();
-        int[,] movements = new int[4, 2] { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
-        for (int i = 0; i < 4; i++)
+        int[,] movements = isDiagonalAllowed ? movementsAll : movementsCardinal;
+
+        for (int i = 0; i < movements.GetLength(0); i++)
         {
             int x = node.x + movements[i, 0];
             int y = node.y + movements[i, 1];
@@ -203,5 +213,19 @@ public class Main : MonoBehaviour
         }
 
         return neighbors;
+    }
+
+    public void SetDiagonal(Toggle toggle)
+    {
+        isDiagonalAllowed = toggle.isOn;
+    }
+
+    public void SetWidthHeight()
+    {
+        matrix = null;
+        InitializeMatrix(height, width);
+        goalX = width - 1;
+        goalY = height - 1;
+        OnSettingsChanged?.Invoke();
     }
 }

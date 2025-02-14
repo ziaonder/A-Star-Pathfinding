@@ -9,7 +9,6 @@ public class Matrix : MonoBehaviour
     private Texture2D texture;
     private SpriteRenderer spriteRenderer;
     private Color red, green, yellow, gray = Color.gray;
-    private int leftBorder = 0, rightBorder = 4, topBorder = 0, bottomBorder = -4;
     private Vector2Int currentStart, currentGoal;
     public static event Action<Vector2, Vector2> OnMouseButtonDown;
     private bool isHoldingMouse = false;
@@ -24,11 +23,13 @@ public class Matrix : MonoBehaviour
     private void OnEnable()
     {
         Main.OnCalculation += DrawPath;
+        Main.OnSettingsChanged += Entry;
     }
 
     private void OnDisable()
     {
         Main.OnCalculation -= DrawPath;
+        Main.OnSettingsChanged -= Entry;
     }
 
     private void Start()
@@ -39,14 +40,15 @@ public class Matrix : MonoBehaviour
         green.a = 0.5f;
         yellow = Color.yellow;
         yellow.a = .5f;
-        texture = new Texture2D(boxSize * 10, boxSize * 10);
-        texture.wrapMode = TextureWrapMode.Clamp;
+        //texture = new Texture2D(boxSize * Main.width, boxSize * Main.height);
+        //texture.wrapMode = TextureWrapMode.Clamp;
         currentStart = new Vector2Int(int.MaxValue, int.MaxValue);
         currentGoal = new Vector2Int(int.MaxValue, int.MaxValue);
-        DrawBlank();
-        DrawNode(0, 0, green);
-        DrawNode(9, 9, red);
-        CreateSprite();
+        //DrawBlank();
+        //DrawNode(0, 0, green);
+        //DrawNode(Main.width - 1, Main.height - 1, red);
+        //CreateSprite();
+        Entry();
     }
 
     private void Update()
@@ -72,6 +74,16 @@ public class Matrix : MonoBehaviour
         }
     }
 
+    private void Entry()
+    {
+        texture = new Texture2D(boxSize * Main.width, boxSize * Main.height);
+        texture.wrapMode = TextureWrapMode.Clamp;
+        DrawBlank();
+        DrawNode(0, 0, green);
+        DrawNode(Main.width - 1, Main.height - 1, red);
+        CreateSprite();
+    }
+
     private bool CheckIfHoldingAnyNode()
     {
         Vector2 index = TurnMousePosIntoMatrixIndex();
@@ -95,14 +107,12 @@ public class Matrix : MonoBehaviour
         Vector3 mousePos = Input.mousePosition;
         mousePos.z = 10;
         mousePos = Camera.main.ScreenToWorldPoint(mousePos);
-
-        if (mousePos.x > leftBorder && mousePos.x < rightBorder &&
-            mousePos.y < topBorder && mousePos.y > bottomBorder)
+        mousePos = mousePos * 100 / boxSize;
+        
+        if (mousePos.x > 0 && mousePos.x < Main.width &&
+            mousePos.y < 0 && mousePos.y > -Main.height)
         {
-            mousePos = mousePos * 100;
-            mousePos = mousePos / boxSize;
             mousePos = new Vector2(Mathf.Floor(Mathf.Abs(mousePos.x)), Mathf.Floor(Mathf.Abs(mousePos.y)));
-
             return mousePos;
         }
 
@@ -149,9 +159,9 @@ public class Matrix : MonoBehaviour
 
     private void DrawBlank()
     {
-        for (int i = 0; i < 10 * boxSize; i++)
+        for (int i = 0; i < Main.height * boxSize; i++)
         {
-            for (int j = 0; j < 10 * boxSize; j++)
+            for (int j = 0; j < Main.width * boxSize; j++)
             {
                 texture.SetPixel(j, i, Color.black);
             }
@@ -164,11 +174,11 @@ public class Matrix : MonoBehaviour
     {
         DrawBlank();
 
-        for (int i = 0; i < 10 * boxSize; i++)
+        for (int i = 0; i < Main.height * boxSize; i++)
         {
-            for (int j = 0; j < 10 * boxSize; j++)
+            for (int j = 0; j < Main.width * boxSize; j++)
             {
-                switch (Main.matrix[9 - i / boxSize, j / boxSize])
+                switch (Main.matrix[Main.height - 1 - i / boxSize, j / boxSize])
                 {
                     case 1:
                         texture.SetPixel(j, i, yellow);
